@@ -2,7 +2,7 @@
 
 Built for the **[PayPal AI Hackathon 2026](https://paypal-ai.devpost.com/)** ($67,500 Cash Prize Pool).  
 **Track:** Agentic Commerce & Autonomous Payments  
-**Live Demo:** Deployed on Vercel  
+**Live Demo:** [https://pactflow-beta.vercel.app](https://pactflow-beta.vercel.app)  
 
 ---
 

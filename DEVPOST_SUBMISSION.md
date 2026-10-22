@@ -4,7 +4,7 @@
 **Prize Pool:** $67,500 in Cash Prizes  
 **Submission Deadline:** November 12, 2026  
 **Format:** Multi-Member Team Submission  
-**Live Application:** Deployed on Vercel  
+**Live Application:** [https://pactflow-beta.vercel.app](https://pactflow-beta.vercel.app)  
 **Repository:** https://github.com/ashokwebs/pactflow  
 
 ---
