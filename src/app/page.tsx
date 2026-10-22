@@ -3,18 +3,75 @@
 import React, { useState } from "react";
 import { Contract, Milestone } from "@/lib/types";
 import { MilestoneCard } from "@/components/MilestoneCard";
-import { Shield, Sparkles, Bot, DollarSign, ArrowRight, CheckCircle2, Lock, Cpu, Globe, ExternalLink, Loader2 } from "lucide-react";
+import {
+  Shield,
+  Sparkles,
+  Bot,
+  DollarSign,
+  ArrowRight,
+  CheckCircle2,
+  Lock,
+  Cpu,
+  Globe,
+  ExternalLink,
+  Loader2,
+  User,
+  ChevronDown,
+  Check,
+  CreditCard
+} from "lucide-react";
 
 const INITIAL_PROMPT = "Design and build an enterprise Next.js web application with PostgreSQL database, OAuth auth, PayPal checkout flow, and 95+ mobile Lighthouse performance.";
 
+interface EscrowPersona {
+  id: string;
+  name: string;
+  role: "client" | "freelancer" | "judge";
+  company: string;
+  email: string;
+}
+
+const PERSONAS: EscrowPersona[] = [
+  {
+    id: "persona_client",
+    name: "Horizon Digital Inc.",
+    role: "client",
+    company: "Client (Contract Funder)",
+    email: "procurement@horizondigital.com",
+  },
+  {
+    id: "persona_freelancer",
+    name: "Ashok Pasala & Team",
+    role: "freelancer",
+    company: "Engineering Delivery Partner",
+    email: "lead@ashokwebs.com",
+  },
+  {
+    id: "persona_judge",
+    name: "PayPal AI Evaluator Sandbox",
+    role: "judge",
+    company: "Global Hackathon Reviewer",
+    email: "judge@paypal.com",
+  },
+];
+
 export default function Home() {
+  const [activePersona, setActivePersona] = useState<EscrowPersona>(PERSONAS[0]);
+  const [isPersonaOpen, setIsPersonaOpen] = useState(false);
   const [prompt, setPrompt] = useState(INITIAL_PROMPT);
   const [budget, setBudget] = useState(1500);
   const [generating, setGenerating] = useState(false);
   const [contract, setContract] = useState<Contract | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handleGenerateContract = async (customPrompt = prompt, customBudget = budget) => {
     setGenerating(true);
+    showToast("Synthesizing milestone contract via AI...");
     try {
       const res = await fetch("/api/contracts/generate", {
         method: "POST",
@@ -22,16 +79,18 @@ export default function Home() {
         body: JSON.stringify({
           prompt: customPrompt,
           totalBudget: customBudget,
-          clientName: "Horizon Digital Inc.",
+          clientName: activePersona.role === "client" ? activePersona.name : "Horizon Digital Inc.",
           freelancerName: "Ashok Pasala & Team",
         }),
       });
       const data = await res.json();
       if (data.success) {
         setContract(data.contract);
+        showToast("Milestone Escrow Contract successfully generated!");
       }
     } catch (err) {
       console.error(err);
+      showToast("Contract generation error");
     } finally {
       setGenerating(false);
     }
@@ -44,6 +103,7 @@ export default function Home() {
       ...contract,
       milestones: newMilestones,
     });
+    showToast(`Milestone updated: ${updated.title} (${updated.status.toUpperCase()})`);
   };
 
   // Financial summary stats
@@ -60,9 +120,17 @@ export default function Home() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#0A0D14] text-gray-100 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#0A0D14] text-gray-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white relative">
+      {/* Toast Alert */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#101726] border border-blue-500/50 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-medium backdrop-blur animate-in fade-in slide-in-from-bottom-2">
+          <Sparkles className="w-4 h-4 text-blue-400" />
+          <span>{toast}</span>
+        </div>
+      )}
+
       {/* Top Navbar */}
-      <header className="border-b border-gray-800/80 bg-[#0E131F]/80 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-gray-800/80 bg-[#0E131F]/90 backdrop-blur sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-900/30">
@@ -75,16 +143,58 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs">
-            <div className="hidden sm:flex items-center gap-2 bg-[#121826] border border-gray-800 px-3 py-1.5 rounded-full text-gray-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>PayPal Orders v2 Sandbox</span>
+          <div className="flex items-center gap-3">
+            {/* Persona Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setIsPersonaOpen(!isPersonaOpen)}
+                className="flex items-center gap-2 bg-[#121826] hover:bg-[#1a2236] border border-gray-700 px-3 py-1.5 rounded-xl text-xs transition"
+              >
+                <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
+                  {activePersona.name.charAt(0)}
+                </div>
+                <div className="text-left hidden sm:block">
+                  <span className="font-medium text-gray-200">{activePersona.name}</span>
+                  <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 ml-1.5 font-mono">
+                    {activePersona.role}
+                  </span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+
+              {isPersonaOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-[#121826] border border-gray-700 rounded-2xl p-3 shadow-2xl z-50 space-y-2">
+                  <div className="text-[11px] text-gray-400 font-medium pb-1 border-b border-gray-800">
+                    Switch Escrow Persona:
+                  </div>
+                  {PERSONAS.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setActivePersona(p);
+                        setIsPersonaOpen(false);
+                        showToast(`Switched persona to ${p.name}`);
+                      }}
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition ${
+                        activePersona.id === p.id ? "bg-blue-600/30 text-blue-300 font-medium" : "hover:bg-gray-800 text-gray-400"
+                      }`}
+                    >
+                      <div>
+                        <div className="text-white">{p.name}</div>
+                        <div className="text-[10px] text-gray-400">{p.company}</div>
+                      </div>
+                      {activePersona.id === p.id && <Check className="w-3.5 h-3.5 text-blue-400" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
+
             <a
               href="https://github.com/ashokwebs/pactflow"
               target="_blank"
               rel="noreferrer"
-              className="text-gray-400 hover:text-white transition flex items-center gap-1"
+              className="text-gray-400 hover:text-white transition flex items-center gap-1 text-xs hidden sm:flex"
             >
               GitHub <ExternalLink className="w-3 h-3" />
             </a>
@@ -211,6 +321,39 @@ export default function Home() {
                 <span className="text-xs text-gray-400">Dispute Shield</span>
                 <div className="text-2xl font-bold text-purple-400 mt-1 font-mono">100%</div>
                 <span className="text-[10px] text-purple-400/80">Objective Criteria Verification</span>
+              </div>
+            </div>
+
+            {/* Escrow Progress Stepper */}
+            <div className="bg-[#121826] border border-gray-800 rounded-xl p-4">
+              <div className="text-xs font-semibold text-gray-300 mb-3 flex items-center justify-between">
+                <span>Escrow Lifecycle Stepper</span>
+                <span className="text-[11px] font-mono text-blue-400">PayPal Orders v2 Protocol</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px]">
+                <div className="bg-[#0A0D14] border border-emerald-500/40 rounded-lg p-2.5 text-emerald-400 font-medium flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> 1. Scope Agreed
+                </div>
+                <div className={`rounded-lg p-2.5 border font-medium flex items-center gap-1.5 ${
+                  fundedAmount > 0 ? "bg-[#0A0D14] border-blue-500/40 text-blue-400" : "bg-[#0A0D14]/40 border-gray-800 text-gray-500"
+                }`}>
+                  <CreditCard className="w-3.5 h-3.5" /> 2. PayPal Hold
+                </div>
+                <div className={`rounded-lg p-2.5 border font-medium flex items-center gap-1.5 ${
+                  contract.milestones.some(m => m.status === "in_review") ? "bg-[#0A0D14] border-amber-500/40 text-amber-400" : "bg-[#0A0D14]/40 border-gray-800 text-gray-500"
+                }`}>
+                  <Bot className="w-3.5 h-3.5" /> 3. AI Verifying
+                </div>
+                <div className={`rounded-lg p-2.5 border font-medium flex items-center gap-1.5 ${
+                  contract.milestones.some(m => m.status === "verified") ? "bg-[#0A0D14] border-purple-500/40 text-purple-400" : "bg-[#0A0D14]/40 border-gray-800 text-gray-500"
+                }`}>
+                  <Shield className="w-3.5 h-3.5" /> 4. Criteria Pass
+                </div>
+                <div className={`rounded-lg p-2.5 border font-medium flex items-center gap-1.5 ${
+                  releasedAmount === totalAmount && totalAmount > 0 ? "bg-[#0A0D14] border-emerald-500/40 text-emerald-400" : "bg-[#0A0D14]/40 border-gray-800 text-gray-500"
+                }`}>
+                  <DollarSign className="w-3.5 h-3.5" /> 5. Auto Disbursed
+                </div>
               </div>
             </div>
 
